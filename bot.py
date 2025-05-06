@@ -1,12 +1,10 @@
 import os
 import requests
 import asyncio
-from telegram import Update, Bot
+from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-BOT_TOKEN = "7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I"
-CHAT_ID = os.getenv("CHAT_ID")
-
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I")
 PAIR_URL = "https://api.dexscreener.com/latest/dex/pairs/bsc/0x68214c06d83a78274bb30598bf4aead0f8995657"
 
 def get_data():
@@ -51,62 +49,41 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🔗 [View on Dexscreener]({PAIR_URL})"
         )
         await update.message.reply_text(msg, parse_mode="Markdown")
-    except:
-        await update.message.reply_text("⚠️ Could not fetch stats.")
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Could not fetch stats: {str(e)}")
 
-# Commands
 async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = await asyncio.to_thread(get_data)
         await update.message.reply_text(format_price(data), parse_mode="Markdown")
-    except:
-        await update.message.reply_text("⚠️ Could not fetch price.")
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Could not fetch price: {str(e)}")
 
 async def volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = await asyncio.to_thread(get_data)
         await update.message.reply_text(format_volume(data), parse_mode="Markdown")
-    except:
-        await update.message.reply_text("⚠️ Could not fetch volume.")
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Could not fetch volume: {str(e)}")
 
 async def marketcap(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = await asyncio.to_thread(get_data)
         await update.message.reply_text(format_marketcap(data), parse_mode="Markdown")
-    except:
-        await update.message.reply_text("⚠️ Could not fetch market cap.")
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Could not fetch market cap: {str(e)}")
 
-# Auto update
-async def auto_post(bot: Bot):
-    while True:
-        try:
-            data = await asyncio.to_thread(get_data)
-            msg = (
-                f"📈 *CRUMB Live Update*\n"
-                f"{format_price(data)}\n"
-                f"{format_volume(data)}\n"
-                f"{format_marketcap(data)}\n\n"
-                f"🔗 [View on Dexscreener]({PAIR_URL})"
-            )
-            await bot.send_message(chat_id=CHAT_ID, text=msg, parse_mode="Markdown")
-        except Exception as e:
-            print("Auto post error:", e)
-        await asyncio.sleep(3600)
-
-# Main
 async def main():
-    app = ApplicationBuilder().token("7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I").build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("price", price))
     app.add_handler(CommandHandler("volume", volume))
     app.add_handler(CommandHandler("marketcap", marketcap))
-
-    bot = Bot(token=BOT_TOKEN)
-    asyncio.create_task(auto_post(bot))
+    app.add_handler(CommandHandler("stats", stats))
+    app.add_handler(CommandHandler("help", help_cmd))
 
     await app.run_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
-
 
