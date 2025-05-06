@@ -95,7 +95,7 @@ async def auto_post(bot: Bot):
 
 # Main
 async def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = ApplicationBuilder().token(7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I).build()
 
     app.add_handler(CommandHandler("price", price))
     app.add_handler(CommandHandler("volume", volume))
