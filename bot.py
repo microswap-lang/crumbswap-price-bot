@@ -1,8 +1,18 @@
 import os
-import requests
 import asyncio
+import signal
+import logging
+import sys
+import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
+# Configure logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 # Bot token (from environment or hardcoded fallback)
 BOT_TOKEN = os.getenv("BOT_TOKEN", "7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I")
@@ -56,6 +66,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(msg, parse_mode="Markdown")
     except Exception as e:
         await update.message.reply_text(f"⚠️ Could not fetch stats: {str(e)}")
+        logger.error(f"Stats error: {str(e)}")
 
 async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -63,6 +74,7 @@ async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(format_price(data), parse_mode="Markdown")
     except Exception as e:
         await update.message.reply_text(f"⚠️ Could not fetch price: {str(e)}")
+        logger.error(f"Price error: {str(e)}")
 
 async def volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -70,6 +82,7 @@ async def volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(format_volume(data), parse_mode="Markdown")
     except Exception as e:
         await update.message.reply_text(f"⚠️ Could not fetch volume: {str(e)}")
+        logger.error(f"Volume error: {str(e)}")
 
 async def marketcap(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -77,10 +90,21 @@ async def marketcap(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(format_marketcap(data), parse_mode="Markdown")
     except Exception as e:
         await update.message.reply_text(f"⚠️ Could not fetch market cap: {str(e)}")
+        logger.error(f"Marketcap error: {str(e)}")
+
+# Shutdown Handler
+async def shutdown(application):
+    logger.info("Shutting down bot...")
+    try:
+        await application.stop()
+        await application.shutdown()
+        logger.info("Bot shutdown complete.")
+    except Exception as e:
+        logger.error(f"Shutdown error: {str(e)}")
 
 # Main Function
 async def main():
-    # Build and initialize application
+    # Build application
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     # Register command handlers
@@ -90,21 +114,14 @@ async def main():
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(CommandHandler("help", help_cmd))
 
+    # Initialize application
     try:
-        # Initialize the application
+        logger.info("Initializing application...")
         await app.initialize()
-        # Start polling
-        await app.run_polling()
-    finally:
-        # Ensure proper shutdown
-        await app.stop()
-        await app.shutdown()
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Bot stopped by user.")
     except Exception as e:
-        print(f"Error running bot: {str(e)}")
+        logger.error(f"Initialize error: {str(e)}")
+        raise
 
+    # Handle shutdown signals
+    def handle_shutdown(loop):
+        logger.info
