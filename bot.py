@@ -23,6 +23,37 @@ def format_volume(data):
 def format_marketcap(data):
     return f"🏦 *Market Cap:* `${float(data['fdv']):,.0f}`"
 
+def format_change(data):
+    change = float(data["priceChange"]["h24"])
+    emoji = "🔺" if change >= 0 else "🔻"
+    return f"{emoji} *24h Change:* `{change:+.2f}%`"
+
+async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = (
+        "*CrumbSwap Bot Commands*\n\n"
+        "💰 `/price` - Current CRUMB token price + 24h change\n"
+        "📊 `/volume` - 24h trading volume\n"
+        "🏦 `/marketcap` - Market cap\n"
+        "📈 `/stats` - Full CRUMB stats\n"
+        "ℹ️ `/help` - Show this list"
+    )
+    await update.message.reply_text(msg, parse_mode="Markdown")
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        data = await asyncio.to_thread(get_data)
+        msg = (
+            f"*CRUMB Stats*\n\n"
+            f"{format_price(data)}\n"
+            f"{format_change(data)}\n"
+            f"{format_volume(data)}\n"
+            f"{format_marketcap(data)}\n\n"
+            f"🔗 [View on Dexscreener]({PAIR_URL})"
+        )
+        await update.message.reply_text(msg, parse_mode="Markdown")
+    except:
+        await update.message.reply_text("⚠️ Could not fetch stats.")
+
 # Commands
 async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
