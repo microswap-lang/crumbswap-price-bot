@@ -4,9 +4,13 @@ import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
+# Bot token (from environment or hardcoded fallback)
 BOT_TOKEN = os.getenv("BOT_TOKEN", "7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I")
+
+# Dexscreener API URL
 PAIR_URL = "https://api.dexscreener.com/latest/dex/pairs/bsc/0x68214c06d83a78274bb30598bf4aead0f8995657"
 
+# Fetch data from Dexscreener
 def get_data():
     res = requests.get(PAIR_URL)
     return res.json()["pair"]
@@ -26,10 +30,11 @@ def format_change(data):
     emoji = "🔺" if change >= 0 else "🔻"
     return f"{emoji} *24h Change:* `{change:+.2f}%`"
 
+# Command Handlers
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "*CrumbSwap Bot Commands*\n\n"
-        "💰 `/price` - Current CRUMB token price + 24h change\n"
+        "💰 `/price` - Current CRUMB token price\n"
         "📊 `/volume` - 24h trading volume\n"
         "🏦 `/marketcap` - Market cap\n"
         "📈 `/stats` - Full CRUMB stats\n"
@@ -73,17 +78,33 @@ async def marketcap(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"⚠️ Could not fetch market cap: {str(e)}")
 
+# Main Function
 async def main():
+    # Build and initialize application
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    # Register command handlers
     app.add_handler(CommandHandler("price", price))
     app.add_handler(CommandHandler("volume", volume))
     app.add_handler(CommandHandler("marketcap", marketcap))
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(CommandHandler("help", help_cmd))
 
-    await app.run_polling()
+    try:
+        # Initialize the application
+        await app.initialize()
+        # Start polling
+        await app.run_polling()
+    finally:
+        # Ensure proper shutdown
+        await app.stop()
+        await app.shutdown()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Bot stopped by user.")
+    except Exception as e:
+        print(f"Error running bot: {str(e)}")
 
