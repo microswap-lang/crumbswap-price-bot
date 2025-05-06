@@ -1,16 +1,41 @@
+import os
 import requests
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import asyncio
+from telegram import Bot
 
-TOKEN = 'YOUR_BOT_TOKEN_HERE'
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")  # Set your group/channel/chat ID here
 
-async def price(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    url = 'https://api.dexscreener.com/latest/dex/pairs/bsc/0x68214c06d83a78274bb30598bf4aead0f8995657'
-    response = requests.get(url)
-    data = response.json()
-    price = data['pair']['priceUsd']
-    await update.message.reply_text(f"Current CRUMB price: ${price}")
+PAIR_URL = "https://api.dexscreener.com/latest/dex/pairs/bsc/0x68214c06d83a78274bb30598bf4aead0f8995657"
 
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("price", price))
-app.run_polling()
+async def fetch_price():
+    try:
+        response = requests.get(PAIR_URL)
+        data = response.json()["pair"]
+
+        price = float(data["priceUsd"])
+        volume = float(data["volume"]["h24"])
+        market_cap = float(data["fdv"])  # FDV = fully diluted value (used as market cap)
+
+        message = (
+            f"💰 *CRUMB Price Update*\n"
+            f"• Price: `${price:.6f}`\n"
+            f"• 24h Volume: `${volume:,.0f}`\n"
+            f"• Market Cap: `${market_cap:,.0f}`\n\n"
+            f"🔗 [View on Dexscreener]({PAIR_URL})"
+        )
+
+        bot = Bot(token=BOT_TOKEN)
+        await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode="Markdown")
+
+    except Exception as e:
+        print("Error fetching or sending price update:", e)
+
+async def main():
+    while True:
+        await fetch_price()
+        await asyncio.sleep(3600)  # wait 1 hour
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
