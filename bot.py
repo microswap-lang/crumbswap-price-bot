@@ -4,7 +4,7 @@ import asyncio
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = "7971247491:AAF1Z9RleXBjp0NBDvF7g3Eh7qA3bq9Ac9I"
 CHAT_ID = os.getenv("CHAT_ID")
 
 PAIR_URL = "https://api.dexscreener.com/latest/dex/pairs/bsc/0x68214c06d83a78274bb30598bf4aead0f8995657"
